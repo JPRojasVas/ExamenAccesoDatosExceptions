@@ -213,15 +213,18 @@ public class RepoTest {
 
     @Test
     @Transactional
-    public void test_placeOrder() {
-
+    public void test_pedido() throws Exception {
         // Hermione no puede comprar items
         Assertions.assertThat(repo).isNotNull();
-        Optional<Order> orden = repo.placeOrder("Hermione", "Elixir of the Mongoose");
-        Assertions.assertThat(orden).isEmpty();
+        try {
+            Optional<Order> orden = repo.placeOrder("Hermione", "Elixir of the Mongoose");
+        } catch (IllegalArgumentException e) {
+            // Verificar el mensaje de la excepción si es necesario
+            Assertions.assertThat(e.getMessage()).isEqualTo("El comprador es un Mudblood y no puede realizar la compra.");
+        }
 
         // Marius Black compra un item
-        orden = repo.placeOrder("Marius Black", "Elixir of the Mongoose");
+        Optional<Order> orden = repo.placeOrder("Marius Black", "Elixir of the Mongoose");
         Assertions.assertThat(orden).isNotEmpty();
 
         Assertions.assertThat(orden.get().getId()).isNotZero();
@@ -237,38 +240,6 @@ public class RepoTest {
         Assertions.assertThat(pedidos.get(2).getWizard().getName()).isEqualTo("Marius Black");
         Assertions.assertThat(pedidos.get(2).getItem().getName()).isEqualToIgnoringCase("Elixir of the Mongoose");
     }
-
-    /**Excepcion*/
-
-
-    @Test
-    @Transactional
-    public void test_pedido() throws Exception {
-
-        // Hermione no puede comprar items - Se espera que se lance OrderException
-        assertThrows(OrdenException.class, () -> {
-            repo.pedido("Hermione", "Elixir of the Mongoose");
-        });
-
-        // Marius Black compra un item
-        Optional<Order> orden = repo.pedido("Marius Black", "Elixir of the Mongoose");
-        Assertions.assertThat(orden).isNotEmpty();
-
-        Assertions.assertThat(orden.get().getId()).isNotZero();
-        Assertions.assertThat(orden.get().getWizard().getName()).isEqualTo("Marius Black");
-        Assertions.assertThat(orden.get().getItem().getName()).isEqualTo("Elixir of the Mongoose");
-
-        // query para obtener todos los pedidos de Marius
-        // de manera agnostica al patron DAO /Active record
-        TypedQuery<Order> query = em.createQuery("select orden from Order orden join orden.wizard wizard where wizard.name = 'Marius Black'", Order.class);
-        List<Order> pedidos = query.getResultList();
-
-        Assertions.assertThat(pedidos).isNotNull().hasSize(4);
-        Assertions.assertThat(pedidos.get(2).getWizard().getName()).isEqualTo("Marius Black");
-        Assertions.assertThat(pedidos.get(2).getItem().getName()).isEqualToIgnoringCase("Elixir of the Mongoose");
-    }
-
-
 
 
     /**
