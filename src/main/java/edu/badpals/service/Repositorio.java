@@ -4,7 +4,6 @@ import edu.badpals.domain.MagicalItem;
 import edu.badpals.domain.Order;
 import edu.badpals.domain.Wizard;
 import edu.badpals.domain.WizardPerson;
-import edu.badpals.exception.OrdenException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
@@ -57,6 +56,21 @@ public class Repositorio {
 
     }
 
+    public void checkMudblood (Boolean comprobante){
+
+        if (Boolean.TRUE.equals(comprobante)){
+            throw new IllegalArgumentException("El mago no puede ser tipo MUDBLOOD");
+        }
+    }
+
+    public void checkExists (Boolean comprobante){
+
+        if (Boolean.FALSE.equals(comprobante)){
+            throw new IllegalArgumentException("El Mago y el Item deben Existir");
+        }
+    }
+
+
     @Transactional
     public Optional<Order> placeOrder(String wizard, String item){
 
@@ -64,54 +78,32 @@ public class Repositorio {
 
         Optional<MagicalItem> itemToBuy = MagicalItem.find("name = ?1", item).firstResultOptional();
 
-        Order newOrder = new Order(wizardBuying.get(), itemToBuy.get());
+        try{
 
+            checkMudblood(wizardBuying.get().getWizard().equals(WizardPerson.MUDBLOOD));
 
-        if (wizardBuying.isPresent() && itemToBuy.isPresent() && wizardBuying.get().getWizard().equals(WizardPerson.MUDBLOOD)){
-
-
+        }catch (IllegalArgumentException exception){
+            System.out.println(exception);
             return Optional.empty();
 
         }
 
-        newOrder.persist();
-        return Optional.ofNullable(newOrder);
+        try {
 
+            checkExists(wizardBuying.isPresent() && itemToBuy.isPresent());
 
-
-    }
-
-
-
-    @Transactional
-    public Optional<Order> pedido(String wizard, String item) throws Exception{
-
-        Optional<Wizard> wizardBuying = Wizard.findByIdOptional(wizard);
-
-        Optional<MagicalItem> itemToBuy = MagicalItem.find("name = ?1", item).firstResultOptional();
-
-        if (!wizardBuying.isPresent() || !itemToBuy.isPresent()){
-
+        } catch (IllegalArgumentException exception){
+            System.out.println(exception);
             return Optional.empty();
 
         }
 
         Order newOrder = new Order(wizardBuying.get(), itemToBuy.get());
 
-        if (wizardBuying.get().getWizard().equals(WizardPerson.MUDBLOOD)){
-
-
-            throw new OrdenException("MUDBLOOD users can't buy any item");
-
-        }
-
         newOrder.persist();
         return Optional.ofNullable(newOrder);
 
-
     }
-
-
 
 
     @Transactional
